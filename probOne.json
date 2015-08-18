@@ -1,0 +1,35 @@
+{
+	"nodes":[
+		{"name":"Frolia","group":4},
+		{"name":"Hailea","group":4},
+		{"name":"Hanalei","group":4},
+		{"name":"Lainea","group":4},
+		{"name":"Maeulia","group":4},
+		{"name":"Lakua","group":4},
+		{"name":"Paukaa","group":4},
+		{"name":"Hauauai","group":4},
+		{"name":"Poipu","group":4},
+		{"name":"Waimea","group":4},
+		{"name":"Kaleola","group":4}
+	],
+	"links":[
+		{"source":"Frolia","target":"Hailea","value":9},
+		{"source":"Hailea","target":"Hanalei","value":5},
+		{"source":"Hanalei","target":"Maeulia","value":6},
+		{"source":"Hauauai","target":"Lainea","value":8},
+		{"source":"Kaleola","target":"Maeulia","value":7},
+		{"source":"Lainea","target":"Hailea","value":5},
+		{"source":"Lakua","target":"Hauauai","value":3},
+		{"source":"Maeulia","target":"Hailea","value":12},
+		{"source":"Paukaa","target":"Hauauai","value":6},
+		{"source":"Poipu","target":"Paukaa","value":9},
+		{"source":"Hailea","target":"Waimea","value":4},
+		{"source":"Waimea","target":"Lakua","value":9},
+		{"source":"Lakua","target":"Poipu","value":7},
+		{"source":"Waimea","target":"Kaleola","value":4},
+		{"source":"Maeulia","target":"Paukaa","value":14},
+		{"source":"Hailea","target":"Lainea","value":8}
+	]
+}
+
+
