@@ -1,70 +1,145 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<style>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<script src='js/d3.min.js'></script>
+		<link rel="stylesheet" type="text/css" href="css/index.css">
+	</head>
+	<body>	
+		<script>			
+			var width = 720,
+			    height = 720;
 
-.node {
-  stroke: #fff;
-  stroke-width: 1.5px;
-}
+			var svg = d3.select('body').append('svg')
+			    .attr('width', width)
+			    .attr('height', height);
 
-.link {
-  stroke: #999;
-  stroke-opacity: .6;
-}
+			    //For Arrow logic - From http://www.coppelia.io/2014/07/an-a-to-z-of-extra-features-for-the-d3-force-layout/ modified to reduce unneeded code
+			    svg.append("defs").selectAll("marker")
+			    .data(["suit"])
+			  	.enter().append("marker")
+			    .attr("id", function(d) { return d; })
+			    .attr("viewBox", "0 -5 10 10")
+			    .attr("refX", 25)
+			    .attr("refY", 0)
+			    .attr("markerWidth", 10)
+			    .attr("markerHeight", 10)
+			    .attr("orient", "auto")
+			  	.append("path")
+			    .attr("d", "M0,-5L10,0L0,5 L10,0 L0, -5")
+			    .style("stroke", "#FFA500")
+			    .style("opacity", "0.6");
 
-</style>
-<body>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
-<script>
+			
+			//load Data - contained so layout doesn't happen before loading data
+			//d3.json("data/probOneIndex.json", function(error, jsonData) { //when using json data
+			//csv code found http://www.d3noob.org/2013_02_01_archive.html
+			  d3.csv("data/probOne.csv", function(error, csvData) {
+				if (error) return console.warn(error);
+				var map = {"nodes":[], "links" : [] };
 
-var width = 960,
-    height = 500;
+				//pull each entry of the csv and put it into usable arrays within the map
+				csvData.forEach(function(d){
+					map.nodes.push({"name": d.source });
+					map.nodes.push({"name": d.target });
+					map.links.push({"source": d.source,
+									"target": d.target,
+									"value": +d.value});
+				});
 
-var color = d3.scale.category20();
+				// return only the distinct / unique nodes
+			     map.nodes = d3.keys(d3.nest()
+			    .key(function (d) { return d.name; })
+			    .map(map.nodes));
+			
+			     //attempt to figure out without help above step 
+			     //even when 0 > map.nodes.length for loop continues and causes undef error because 
+			     //map.nodes[anything out of range] causes error Commenting out and moving on
+				/*
+				var holderArray = ["Frolia"]; 
+				for(var o = 0; 0 < map.nodes.length;  ; o++ ){
+					var test = map.nodes[o].name;
+					//var test2 = holderArray.indexOf(test1);
+					if(holderArray.indexOf(test) < 0){
+						holderArray.push(test);
+					}
+				}	
+				map.nodes = holderArray;		
+				*/
 
-var force = d3.layout.force()
-    .charge(-250)
-    .linkDistance(function(d) {return d.value})
-    .size([width, height]);
+				// change link objects into indexes so d3 can link them to nodes
+				map.links.forEach(function(d, i) {
+					map.links[i].target = map.nodes.indexOf(map.links[i].target);
+					map.links[i].source = map.nodes.indexOf(map.links[i].source);
+				});
 
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
+				map.nodes.forEach(function(d, i) {
+					map.nodes[i] = {"name" : d };
+				});
 
-d3.json("probOneIndex.json", function(error, graph) {
-  if (error) return console.warn(error);
+			    var nodes = map.nodes
 
-  force
-      .nodes(graph.nodes)
-      .links(graph.links)
-      .start();
+				var links = map.links
 
-  var link = svg.selectAll(".link")
-      .data(graph.links)
-    .enter().append("line")
-      .attr("class", "link")
-      .style("stroke-width", function(d) { return Math.sqrt(d.value); });
+				var force = d3.layout.force()
+				    .size([width, height])
+				    .nodes(nodes)
+				    .links(links)
+				    .linkDistance(function(d) {return d.value*30});
 
-  var node = svg.selectAll(".node")
-      .data(graph.nodes)
-    .enter().append("circle")
-      .attr("class", "node")
-      .attr("r", 5)
-      .style("fill", function(d) { return color(d.group); })
-      .call(force.drag);
+				
+				
 
-  node.append("title")
-      .text(function(d) { return d.name; });
+				var link = svg.selectAll('.link')
+				    .data(links)
+				    .enter().append('line')
+				    .attr('class', 'link')
+				    .style("marker-end", "url(#suit)"); //for arrow
 
-  force.on("tick", function() {
-    link.attr("x1", function(d) { return d.source.x; })
-        .attr("y1", function(d) { return d.source.y; })
-        .attr("x2", function(d) { return d.target.x; })
-        .attr("y2", function(d) { return d.target.y; });
+				
 
-    node.attr("cx", function(d) { return d.x; })
-        .attr("cy", function(d) { return d.y; });
-  });
-});
+				var node = svg.selectAll('.node')
+				    .data(nodes)
+				    .enter().append('g')
+				    	.attr('class', 'node');
+				    
+				    node.append('circle')
+				    	.attr('r',width/50);
+				    node.append('text')
+				    	.attr("dx",15)
+				    	.attr("dy",0)
+				    	.attr("class","citylabel")
+				    	.text(function(d) {return d.name; });
 
-</script>
+
+				
+				force.on('tick', function() {
+
+				    
+
+				    /*node.attr('r', width/50)
+				        .attr('cx', function(d) { return d.x; })
+				        .attr('cy', function(d) { return d.y; });
+				    */
+				    d3.selectAll('circle')
+				    	.attr('cx', function(d) { return d.x; })
+				        .attr('cy', function(d) { return d.y; })
+
+				    d3.selectAll('text')
+				    	.attr('x', function(d) { return d.x; })
+				        .attr('y', function(d) { return d.y; })
+
+				    
+				    link.attr('x1', function(d) { return d.source.x; })
+				        .attr('y1', function(d) { return d.source.y; })
+				        .attr('x2', function(d) { return d.target.x; })
+				        .attr('y2', function(d) { return d.target.y; });
+
+				});
+
+
+				force.start();
+			});	
+    </script>
+	</body>
+</html>

@@ -1,0 +1,20 @@
+.node {
+  stroke: #555;
+  fill: #00ff00;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #FFA500;
+  stroke-opacity: .6;
+  stroke-width: 1.5px;
+}
+
+svg {
+	background-image: url('../img/crosschx.png');
+	background-size: cover;
+}
+
+.citylabel {
+	color: #555;
+}
