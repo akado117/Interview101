@@ -1,0 +1,1 @@
+Simply launch the index.html in a modern browser. 

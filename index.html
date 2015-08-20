@@ -2,7 +2,10 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<script src='js/d3.min.js'></script>
+		<script type="text/javascript" src='js/d3.min.js'></script>
+		<script type="text/javascript" src='js/jquery-2.1.4.min.js'></script>
+		<script type="text/javascript" src='bootstrap.min.js'></script>
+		<link rel="stylesheet" type="text/css" href="css/bootstrap.css">
 		<link rel="stylesheet" type="text/css" href="css/index.css">
 	</head>
 	<body>	
@@ -47,15 +50,38 @@
 									"value": +d.value});
 				});
 
+				/*
+				//added in to fill combobox 
+				map.links.sort(function(a,b) {return a.value - b.value; });
+				var cBox = d3.select('#highlightbox');			
+				map.links.forEach(function(d) {
+					cBox.append('option')
+						.attr("value", d.source + " " + d.target)
+						.text(d.source + " " + d.target);
+				});
+				*/ //was for autofilling a combobox at the bottom of the page
+
 				// return only the distinct / unique nodes
 			     map.nodes = d3.keys(d3.nest()
 			    .key(function (d) { return d.name; })
 			    .map(map.nodes));
+
+			    //grabs index of links from the node array before they are turned into objects
+			    var link1 =  "NaN" + map.nodes.indexOf('Frolia') + "x" + map.nodes.indexOf('Hailea');
+				var link2 =  "NaN" + map.nodes.indexOf('Hailea') + "x" + map.nodes.indexOf('Waimea');
+				var link3 =  "NaN" + map.nodes.indexOf('Waimea') + "x" + map.nodes.indexOf('Lakua');
+				var link4 =  "NaN" + map.nodes.indexOf('Lakua') + "x" + map.nodes.indexOf('Poipu');
 			
-			     //attempt to figure out without help above step 
+			    //attempt to figure out without help above step
+			    /*
+			    //to store index of points of interest for later highlight
+			     var froliaIndex =map.nodes.indexOf("Frolia")
+			     var poipuIndex =map.nodes.indexOf("Poipu")
+			    
+			 
 			     //even when 0 > map.nodes.length for loop continues and causes undef error because 
 			     //map.nodes[anything out of range] causes error Commenting out and moving on
-				/*
+				
 				var holderArray = ["Frolia"]; 
 				for(var o = 0; 0 < map.nodes.length;  ; o++ ){
 					var test = map.nodes[o].name;
@@ -74,12 +100,46 @@
 				});
 
 				map.nodes.forEach(function(d, i) {
-					map.nodes[i] = {"name" : d };
+					map.nodes[i] = {"name" : d, "indx" : i };
 				});
+				//end csv conv section 		
+
 
 			    var nodes = map.nodes
-
 				var links = map.links
+
+				
+				//attempt to computationally solve the shortest path 
+				/*				
+				var startPoint = froliaIndex
+				var possibleRouts = [[startPoint]];//holds stages of the search
+				var endPoint = poipuIndex;
+
+				for(var leg = 0; leg < map.links.length; leg++){
+					for(var path = 0; path < possibleRouts[leg].length; path++){
+						findPossiblePathsFromNode(map.links, possibleRouts[leg][path], possibleRouts);
+					}
+				}
+
+				function findPossiblePathsFromNode(linksArray, start, possibleRoutes){
+					var routeHold = [];				
+					for(var i = 0; i < linksArray.length; i++){
+						if(linksArray[i].source == start){
+							routeHold.push(linksArray[i].target);
+						}						
+					};
+					possibleRoutes.push(routeHold);
+				};
+				*/
+				//visually highlight path
+				nodes.forEach(function(d,i) {
+					d3.select('#listOfNodes')
+						.append('li')
+						.text(d.name + " " + i);
+				})
+				
+			
+			
 
 				var force = d3.layout.force()
 				    .size([width, height])
@@ -94,22 +154,84 @@
 				    .data(links)
 				    .enter().append('line')
 				    .attr('class', 'link')
+				    //adds in id to grab the highlighted one
+				    .attr('id', function(d) {return "NaN" + d.source + "x" + d.target; })
 				    .style("marker-end", "url(#suit)"); //for arrow
+
+
 
 				
 
 				var node = svg.selectAll('.node')
 				    .data(nodes)
 				    .enter().append('g')
-				    	.attr('class', 'node');
+				    	.attr('class', 'node');				    	
 				    
 				    node.append('circle')
-				    	.attr('r',width/50);
+				    	.attr('r',width/50)
+				    	.attr('id',function(d) {return "NaN" + d.indx ;})				    	
+				    	.on("click", highlightNode);
+
 				    node.append('text')
 				    	.attr("dx",15)
 				    	.attr("dy",0)
 				    	.attr("class","citylabel")
 				    	.text(function(d) {return d.name; });
+
+
+
+
+				//apply the highlight
+				d3.select("#" + link1).style("stroke-width", "3px").style("stroke",'limegreen');
+				d3.select("#" + link2).style("stroke-width", "3px").style("stroke",'limegreen');
+				d3.select('#' + link3).style("stroke-width", "3px").style("stroke",'limegreen');
+				d3.select('#' + link4).style("stroke-width", "3px").style("stroke",'limegreen');
+
+
+
+				//modified code from
+				//http://www.coppelia.io/2014/07/an-a-to-z-of-extra-features-for-the-d3-force-layout/
+				//Toggle stores whether the highlighting is on
+				var toggle = 0;
+				//Create an array logging what is connected to what
+
+				var linkedByIndex = {};
+				var activeNodes = [];
+				for (i = 0; i < nodes.length; i++) {
+				    linkedByIndex[i + "," + i] = 1;
+				};
+				
+				links.forEach(function (d) {
+				    linkedByIndex[d.source + "," + d.target] = 1;
+				});
+				//This function looks up whether a pair are neighbours
+				function neighbor(a, b) {
+				    return linkedByIndex[a.index + "," + b.index];
+				}
+
+				function highlightNode() {
+					
+					d = d3.select(this).node().__data__;
+					
+				    if (activeNodes.indexOf(d.index) <0) {
+							     
+				        this.setAttribute("style", "fill :yellow;");
+				  	    activeNodes.push(d.index);
+				        
+				    } else {
+				    	
+				    	this.setAttribute("style", "");
+				        temp = activeNodes.indexOf(d.index);
+				        activeNodes.splice(temp,1);
+				    }
+				    
+				    if(activeNodes.length > 2){
+				    	
+				    	var unHighlight = "NaN" + activeNodes.shift();
+				    	d3.select("#" + unHighlight).style('fill', '');				    					    		
+				    }
+				}
+
 
 
 				
@@ -140,6 +262,25 @@
 
 				force.start();
 			});	
+		
+		/*
+		function highlight(){
+  			var myselect = document.getElementById("highlightbox");
+  			alert(myselect.options[myselect.selectedIndex].value);
+		}
+		*/ //combobox code for if I user for 
+
     </script>
+
+    <div id="listOfNodes">
+    	
+    </div>
+
+    <!--
+   <select class="combobox" id='highlightbox' onchange="highlight()">
+    		<option onclick="highlight()">City Distance</option>
+    </select>
+ 	-->
+
 	</body>
 </html>
